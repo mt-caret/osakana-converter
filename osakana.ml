@@ -81,7 +81,6 @@ let view (model : Model.t Incr.t) ~inject =
         [ text conversion_result ]
     ; span [] (Option.to_list error_message_text)
     ]
-  (* Vdom.Node.(p [] [ text "Hello, World from incr_dom" ]) *)
 ;;
 
 let on_startup ~schedule:_ _model =
