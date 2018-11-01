@@ -2,13 +2,12 @@ open Core_kernel
 
 module State = struct
   type t =
-    { name : string
-    ; action : [ `Wait | `Go ]
+    { action : [ `Wait | `Go ]
     ; go : int
     ; wait : int
     } [@@deriving bin_io, sexp, compare]
 
-  let create ~name ~action ~go ~wait = { name; action; go; wait }
+  let create ~action ~go ~wait = { action; go; wait }
 end
 
 type t = State.t array [@@deriving bin_io, sexp, compare]
@@ -33,7 +32,7 @@ let of_labeled_dfa : Labeled_dfa.t -> (t, string) Result.t =
       List.map states ~f:(fun state ->
         let%map go = lookup_index state.go
         and wait = lookup_index state.wait in
-        State.create ~name:state.name ~action:state.action ~go ~wait)
+        State.create ~action:state.action ~go ~wait)
       |> Result.all
     in
     List.to_array indexed_list
@@ -45,8 +44,35 @@ let labeled_dfa_of_string str =
   |> Result.map_error ~f:Exn.to_string
 ;;
 
+(* let of_string str =
+ *   let open Result.Let_syntax in
+ *   let%bind labeled_dfa = labeled_dfa_of_string str in
+ *   of_labeled_dfa labeled_dfa
+ * ;; *)
+
 let of_string str =
-  let open Result.Let_syntax in
-  let%bind labeled_dfa = labeled_dfa_of_string str in
-  of_labeled_dfa labeled_dfa
+  let _assoc_list =
+    String.split_lines str
+    |> List.map ~f:(fun line ->
+      Scanf.sscanf line "%d:%c,%d,%d" (fun index wg go wait ->
+        let action =
+          match wg with
+          | 'w' -> `Wait
+          | 'g' -> `Go
+          | _ -> failwith "wrong character"
+        in
+        (index, State.create ~action ~go ~wait)))
+    |> List.sort ~compare:[%compare: int * State.t]
+  in
+  failwith "unimplemented"
+
+let to_string (t : t) =
+  Array.mapi t ~f:(fun index state ->
+      let wg =
+        match state.action with
+        | `Wait -> 'w'
+        | `Go -> 'g'
+      in
+      sprintf "%d:%c,%d,%d" index wg state.go state.wait)
+  |> String.concat_array ~sep:"\n"
 ;;
