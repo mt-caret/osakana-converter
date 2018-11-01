@@ -44,27 +44,27 @@ let labeled_dfa_of_string str =
   |> Result.map_error ~f:Exn.to_string
 ;;
 
-(* let of_string str =
- *   let open Result.Let_syntax in
- *   let%bind labeled_dfa = labeled_dfa_of_string str in
- *   of_labeled_dfa labeled_dfa
- * ;; *)
+let of_labeled_dfa_string str =
+  let open Result.Let_syntax in
+  let%bind labeled_dfa = labeled_dfa_of_string str in
+  of_labeled_dfa labeled_dfa
+;;
 
-let of_string str =
-  let _assoc_list =
-    String.split_lines str
-    |> List.map ~f:(fun line ->
-      Scanf.sscanf line "%d:%c,%d,%d" (fun index wg go wait ->
-        let action =
-          match wg with
-          | 'w' -> `Wait
-          | 'g' -> `Go
-          | _ -> failwith "wrong character"
-        in
-        (index, State.create ~action ~go ~wait)))
-    |> List.sort ~compare:[%compare: int * State.t]
-  in
-  failwith "unimplemented"
+(* let of_string str =
+ *   let _assoc_list =
+ *     String.split_lines str
+ *     |> List.map ~f:(fun line ->
+ *       Scanf.sscanf line "%d:%c,%d,%d" (fun index wg go wait ->
+ *         let action =
+ *           match wg with
+ *           | 'w' -> `Wait
+ *           | 'g' -> `Go
+ *           | _ -> failwith "wrong character"
+ *         in
+ *         (index, State.create ~action ~go ~wait)))
+ *     |> List.sort ~compare:[%compare: int * State.t]
+ *   in
+ *   failwith "unimplemented" *)
 
 let to_string (t : t) =
   Array.mapi t ~f:(fun index state ->
