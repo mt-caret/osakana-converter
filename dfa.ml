@@ -18,7 +18,10 @@ let of_labeled_dfa : Labeled_dfa.t -> (t, string) Result.t =
   | states ->
     let open Result.Let_syntax in
     let%bind index_map =
-      List.foldi states ~init:(Ok String.Map.empty) ~f:(fun index map state ->
+      List.foldi
+        states
+        ~init:(Ok String.Map.empty)
+        ~f:(fun index map state ->
           match%bind map >>| String.Map.add ~key:state.name ~data:index with
           | `Ok x -> Ok x
           | `Duplicate -> Error ("Duplicate state: " ^ state.name))
@@ -39,9 +42,21 @@ let of_labeled_dfa : Labeled_dfa.t -> (t, string) Result.t =
 ;;
 
 let labeled_dfa_of_string str =
+  let to_position (lexbuf : Lexing.lexbuf) =
+    let pos = lexbuf.lex_curr_p in
+    sprintf
+      "Line %d column %d"
+      pos.pos_lnum
+      (pos.pos_cnum - pos.pos_bol + 1)
+  in
   let lexbuf = Lexing.from_string str in
   Result.try_with (fun () -> Parser.dfa Lexer.read lexbuf)
-  |> Result.map_error ~f:Exn.to_string
+  |> Result.map_error ~f:(function
+      | Lexer.SyntaxError message ->
+        sprintf "%s: %s" (to_position lexbuf) message
+      | Parser.Error ->
+        sprintf "%s: Syntax error" (to_position lexbuf)
+      | exn -> Exn.to_string exn)
 ;;
 
 let of_labeled_dfa_string str =

@@ -25,8 +25,6 @@ module Action = struct
   type t =
     | Nop
     | Update_dfa_field of string
-    | Conversion_success of string
-    | Show_error of string
   [@@deriving compare, sexp, variants]
 
   let should_log _ = false
@@ -36,25 +34,23 @@ module State = struct
   type t = unit
 end
 
-let log s = Firebug.console##log (Js.string s)
-
 let apply_action (action : Action.t) (model : Model.t) _state =
-  sprintf !"%{sexp:Action.t}" action |> log;
+  sprintf !"%{sexp:Action.t}" action |> Util.log;
   match action with
   | Nop -> model
   | Update_dfa_field labeled_dfa_field ->
-    { model with
-      labeled_dfa_field
-    }
-  | Conversion_success conversion_result ->
-    { model with
-      conversion_result
-    ; error_message = None
-    }
-  | Show_error error_message ->
-    { model with
-      error_message = Some error_message
-    }
+    let new_model = { model with labeled_dfa_field } in
+    match Dfa.of_labeled_dfa_string labeled_dfa_field with
+    | Ok dfa ->
+      let conversion_result = Dfa.to_string dfa in
+      { new_model with
+        conversion_result
+      ; error_message = None
+      }
+    | Error error_message ->
+      { new_model with
+        error_message = Some error_message
+      }
 ;;
 
 let update_visibility = Fn.id
@@ -63,7 +59,10 @@ let view (model : Model.t Incr.t) ~inject =
   let open Vdom in
   let open Vdom.Node in
   let open Incr.Let_syntax in
-  let%map labeled_dfa_field = model >>| Model.labeled_dfa_field in
+  let%map labeled_dfa_field = model >>| Model.labeled_dfa_field
+  and conversion_result = model >>| Model.conversion_result
+  and error_message = model >>| Model.error_message in
+  let error_message_text = Option.map ~f:text error_message in
   div
     []
     [ label [ Attr.for_ "labeled_dfa_field" ] [ text "Labeled DFA:" ]
@@ -79,15 +78,15 @@ let view (model : Model.t Incr.t) ~inject =
             Dom.preventDefault ev;
             inject Action.Nop)
         ]
-        [ text labeled_dfa_field ]
+        [ text conversion_result ]
+    ; span [] (Option.to_list error_message_text)
     ]
   (* Vdom.Node.(p [] [ text "Hello, World from incr_dom" ]) *)
 ;;
 
-
 let on_startup ~schedule:_ _model =
   let _ = Dfa.of_labeled_dfa_string "" in
-  log "Hello, World from incr_dom (log)";
+  Util.log "Hello, World from incr_dom (log)";
   Deferred.unit
 
 let on_display ~old:_ _model _state = ()

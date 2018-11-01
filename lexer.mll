@@ -28,9 +28,10 @@ rule read =
   | 'w'         { WAIT }
   | 'g'         { GO }
   | id          { ID (Lexing.lexeme lexbuf) }
-  | _           { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
+  | _           { raise (SyntaxError ("Unexpected char: '" ^ Lexing.lexeme lexbuf ^ "'")) }
   | eof         { EOF }
 and read_comment =
   parse
-  | newline { () }
+  | newline { next_line lexbuf; () }
   | _       { read_comment lexbuf }
+  | eof     { () }

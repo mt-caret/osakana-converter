@@ -18,7 +18,7 @@ states:
 
 rev_states:
   | (* empty *) { [] }
-  | st = rev_states; name = ID; COLON; action = action; COMMA; go = ID; wait = ID
+  | st = rev_states; name = ID; COLON; action = action; COMMA; go = ID; COMMA; wait = ID
     { Labeled_dfa.State.create ~name ~action ~go ~wait :: st }
   ;
 
