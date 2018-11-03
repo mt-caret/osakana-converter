@@ -61,31 +61,48 @@ let view (model : Model.t Incr.t) ~inject =
   let open Incr.Let_syntax in
   let%map labeled_dfa_field = model >>| Model.labeled_dfa_field
   and conversion_result = model >>| Model.conversion_result
-  and error_message = model >>| Model.error_message in
-  let error_message_text = Option.map ~f:text error_message in
+  and error_message = model >>| Model.error_message
+  in
+  let error_message_span =
+    match error_message with
+    | Some message -> span [ Attr.style_css "color:red" ] [ text message ]
+    | None -> span [] [ text "Conversion succeeded" ]
+  in
+  let flex_style direction =
+    Attr.style [ ("display", "flex"); ("flex-direction", direction); ("height", "100%") ]
+  in
   div
-    []
-    [ label [ Attr.for_ "labeled_dfa_field" ] [ text "Labeled DFA:" ]
-    ; textarea
-        [ Attr.id "labeled_dfa_field"
-        ; Attr.on_input (fun _ev -> Fn.compose inject Action.update_dfa_field)
-        ]
-        [ text labeled_dfa_field ]
-    ; label [ Attr.for_ "conversion_result_field" ] [ text "Conversion Result:" ]
-    ; textarea
-        [ Attr.id "conversion_result"
-        ; Attr.on_keydown (fun ev ->
-            Dom.preventDefault ev;
-            inject Action.Nop)
-        ]
-        [ text conversion_result ]
-    ; span [] (Option.to_list error_message_text)
+    [ flex_style "column" ]
+    [ error_message_span
+    ; div
+      [ flex_style "row" ]
+      [ div
+          [ Attr.class_ "field_container" ]
+          [ label [ Attr.for_ "labeled_dfa_field" ] [ text "Labeled DFA:" ]
+          ; textarea
+              [ Attr.id "labeled_dfa_field"
+              ; Attr.on_input (fun _ev -> Fn.compose inject Action.update_dfa_field)
+              ]
+              [ text labeled_dfa_field ]
+          ]
+      ; div
+          [ Attr.class_ "field_container" ]
+          [ label [ Attr.for_ "conversion_result_field" ] [ text "Conversion Result:" ]
+          ; textarea
+              [ Attr.id "conversion_result"
+              ; Attr.on_keydown (fun ev ->
+                  Dom.preventDefault ev;
+                  inject Action.Nop)
+              ]
+              [ text conversion_result ]
+          ]
+      ]
     ]
 ;;
 
-let on_startup ~schedule:_ _model =
-  let _ = Dfa.of_labeled_dfa_string "" in
+let on_startup ~schedule _model =
   Util.log "Hello, World from incr_dom (log)";
+  Action.update_dfa_field "" |> schedule;
   Deferred.unit
 
 let on_display ~old:_ _model _state = ()
