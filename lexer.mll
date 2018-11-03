@@ -16,7 +16,7 @@ let next_line (lexbuf : Lexing.lexbuf) =
 let whitespace = ' ' | '\t'
 let newline = '\r' | '\n' | "\r\n"
 
-let id = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
+let id = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '-']*
 
 rule read =
   parse

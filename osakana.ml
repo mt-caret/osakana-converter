@@ -39,6 +39,7 @@ let apply_action (action : Action.t) (model : Model.t) _state =
   match action with
   | Nop -> model
   | Update_dfa_field labeled_dfa_field ->
+    Dom_html.window##.location##.hash := Js.string labeled_dfa_field;
     let new_model = { model with labeled_dfa_field } in
     match Dfa.of_labeled_dfa_string labeled_dfa_field with
     | Ok dfa ->
@@ -102,8 +103,10 @@ let view (model : Model.t Incr.t) ~inject =
 
 let on_startup ~schedule _model =
   Util.log "Hello, World from incr_dom (log)";
-  Action.update_dfa_field "" |> schedule;
+  let content = Js.to_string Dom_html.window##.location##.hash |> Url.urldecode in
+  Action.update_dfa_field content |> schedule;
   Deferred.unit
+;;
 
 let on_display ~old:_ _model _state = ()
 
