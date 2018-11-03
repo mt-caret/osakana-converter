@@ -1,6 +1,6 @@
 (executable
   (name main)
-  (libraries angstrom incr_dom core_kernel async_kernel js_of_ocaml)
+  (libraries incr_dom core_kernel async_kernel js_of_ocaml)
   (js_of_ocaml (flags --opt=3))
   (preprocess (pps ppx_jane js_of_ocaml-ppx)))
 
